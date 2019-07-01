@@ -65,8 +65,9 @@ VM_REFERENCE = {
     }
 }
 
+
 def _get_authority_url(mystack_cloud, tenant):
-    
+
     authority_url = mystack_cloud.endpoints.active_directory
     is_adfs = bool(re.match('.+(/adfs|/adfs/)$', authority_url, re.I))
     if is_adfs:
@@ -76,22 +77,23 @@ def _get_authority_url(mystack_cloud, tenant):
         authority_url = authority_url.rstrip('/') + '/' + (tenant)
     return authority_url, is_adfs
 
+
 def run_example():
     """Virtual Machine management example."""
     #
     # Create all clients with an Application (service principal) token provider
     #
-    mystack_cloud = get_cloud_from_metadata_endpoint(os.environ['ARM_ENDPOINT'])
+    mystack_cloud = get_cloud_from_metadata_endpoint(
+        os.environ['ARM_ENDPOINT'])
 
     # Set Storage Endpoint suffix
     arm_url = mystack_cloud.endpoints.resource_manager
-    storage_endpoint_suffix = arm_url.replace(arm_url.split(".")[0], "").strip('./')
+    storage_endpoint_suffix = arm_url.replace(
+        arm_url.split(".")[0], "").strip('./')
 
-    
     # By Default, use AzureStack supported profile
     KnownProfiles.default.use(KnownProfiles.v2017_03_09_profile)
 
-    
     """
     Authenticate using service principal w/ cert.
     """
@@ -120,10 +122,14 @@ def run_example():
     # By Default, use AzureStack supported profile
     KnownProfiles.default.use(KnownProfiles.v2017_03_09_profile)
 
-    resource_client = ResourceManagementClient(credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
-    compute_client = ComputeManagementClient(credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
-    storage_client = StorageManagementClient(credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
-    network_client = NetworkManagementClient(credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
+    resource_client = ResourceManagementClient(
+        credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
+    compute_client = ComputeManagementClient(
+        credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
+    storage_client = StorageManagementClient(
+        credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
+    network_client = NetworkManagementClient(
+        credentials, subscription_id, base_url=mystack_cloud.endpoints.resource_manager)
 
     ###########
     # Prepare #
@@ -131,7 +137,8 @@ def run_example():
 
     # Create Resource group
     print('\nCreate Resource Group')
-    resource_client.resource_groups.create_or_update(GROUP_NAME, {'location':LOCATION})
+    resource_client.resource_groups.create_or_update(
+        GROUP_NAME, {'location': LOCATION})
 
     # Create a storage account
     print('\nCreate a storage account')
@@ -155,7 +162,8 @@ def run_example():
 
     # Create Linux VM
     print('\nCreating Linux Virtual Machine')
-    vm_parameters = create_vm_parameters(nic.id, VM_REFERENCE['linux'], storage_endpoint_suffix)
+    vm_parameters = create_vm_parameters(
+        nic.id, VM_REFERENCE['linux'], storage_endpoint_suffix)
     async_vm_creation = compute_client.virtual_machines.create_or_update(
         GROUP_NAME, VM_NAME, vm_parameters)
     async_vm_creation.wait()
@@ -188,7 +196,7 @@ def run_example():
                     'disk_size_gb': 1,
                     'lun': 0,
                     'vhd': {
-                        'uri' : "https://{}.blob.{}/vhds/mydatadisk1.vhd".format(
+                        'uri': "https://{}.blob.{}/vhds/mydatadisk1.vhd".format(
                             STORAGE_ACCOUNT_NAME, storage_endpoint_suffix)
                     },
                     'create_option': 'Empty'
@@ -215,15 +223,16 @@ def run_example():
         virtual_machine
     )
     virtual_machine = async_vm_update.result()
-    
+
     # Deallocating the VM (resize prepare)
     print('\nDeallocating the VM (resize prepare)')
-    async_vm_deallocate = compute_client.virtual_machines.deallocate(GROUP_NAME, VM_NAME)
+    async_vm_deallocate = compute_client.virtual_machines.deallocate(
+        GROUP_NAME, VM_NAME)
     async_vm_deallocate.wait()
 
     # Update OS disk size by 10Gb
     print('\nUpdate OS disk size')
-    
+
     # Server is not returning the OS Disk size (None), possible bug in server
     if not virtual_machine.storage_profile.os_disk.disk_size_gb:
         print("\tServer is not returning the OS disk size, possible bug in the server?")
@@ -245,12 +254,14 @@ def run_example():
 
     # Restart the VM
     print('\nRestart VM')
-    async_vm_restart = compute_client.virtual_machines.restart(GROUP_NAME, VM_NAME)
+    async_vm_restart = compute_client.virtual_machines.restart(
+        GROUP_NAME, VM_NAME)
     async_vm_restart.wait()
 
     # Stop the VM
     print('\nStop VM')
-    async_vm_stop = compute_client.virtual_machines.power_off(GROUP_NAME, VM_NAME)
+    async_vm_stop = compute_client.virtual_machines.power_off(
+        GROUP_NAME, VM_NAME)
     async_vm_stop.wait()
 
     # List VMs in subscription
@@ -265,13 +276,15 @@ def run_example():
 
     # Delete VM
     print('\nDelete VM')
-    async_vm_delete = compute_client.virtual_machines.delete(GROUP_NAME, VM_NAME)
+    async_vm_delete = compute_client.virtual_machines.delete(
+        GROUP_NAME, VM_NAME)
     async_vm_delete.wait()
 
     # Create Windows VM
     print('\nCreating Windows Virtual Machine')
     # Recycling NIC of previous VM
-    vm_parameters = create_vm_parameters(nic.id, VM_REFERENCE['windows'], storage_endpoint_suffix)
+    vm_parameters = create_vm_parameters(
+        nic.id, VM_REFERENCE['windows'], storage_endpoint_suffix)
     async_vm_creation = compute_client.virtual_machines.create_or_update(
         GROUP_NAME, VM_NAME, vm_parameters)
     async_vm_creation.wait()
@@ -283,6 +296,7 @@ def run_example():
     delete_async_operation = resource_client.resource_groups.delete(GROUP_NAME)
     delete_async_operation.wait()
     print("\nDeleted: {}".format(GROUP_NAME))
+
 
 def create_nic(network_client):
     """Create a Network Interface for a VM.
@@ -328,6 +342,7 @@ def create_nic(network_client):
     )
     return async_nic_creation.result()
 
+
 def create_vm_parameters(nic_id, vm_reference, storage_endpoint_suffix):
     """Create the VM parameters structure.
     """
@@ -355,7 +370,7 @@ def create_vm_parameters(nic_id, vm_reference, storage_endpoint_suffix):
                 'create_option': 'fromImage',
                 'vhd': {
                     'uri': 'https://{}.blob.{}/vhds/{}.vhd'.format(
-                        STORAGE_ACCOUNT_NAME, storage_endpoint_suffix , VM_NAME+haikunator.haikunate())
+                        STORAGE_ACCOUNT_NAME, storage_endpoint_suffix, VM_NAME+haikunator.haikunate())
                 }
             },
         },
